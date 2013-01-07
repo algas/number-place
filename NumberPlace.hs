@@ -2,6 +2,7 @@ module NumberPlace where
 
 import Data.List
 import Data.Array
+import Control.Applicative
 
 type Index = (Int,Int)
 type Board = Array Index Int
@@ -60,7 +61,7 @@ blockElems b = concat [ sp xss | xss <- (splits 27 . elems) b]
         sp xss = map concat $ transpose [splitAt3 (3,6) xs | xs <- splits 9 xss]
 
 isFinished :: Board -> Bool
-isFinished b = all check [horizontalElems b, verticalElems b, blockElems b]
+isFinished b = all check $ [horizontalElems, verticalElems, blockElems] <*> [b]
     where
         check :: [[Int]] -> Bool
         check xs = all (==[1..9]) $ map sort xs
@@ -91,19 +92,15 @@ candidateIndices :: Board -> Int -> [Index]
 candidateIndices b x = [v | v <- vacancies b, v `notElem` (filled b x)]
     where
         filled :: Board -> Int -> [Index]
-        filled z y = nub [j | i <- getIndices z y, j <- (horizontalIndices i ++ verticalIndices i ++ blockIndices i)]
+        filled z y = nub [j | i <- getIndices z y, j <- concat ([horizontalIndices, verticalIndices, blockIndices] <*> [i])]
 
 removeDuplicates :: [Index] -> [Index]
 removeDuplicates xs = [x | x <- xs, noDuplicates x xs]
     where
         noDuplicates :: Index -> [Index] -> Bool
-        noDuplicates i js = (horizontalCount i js) * (verticalCount i js) * (blockCount i js) == 0
-        horizontalCount :: Index -> [Index] -> Int
-        horizontalCount i js = length [1 | j <- js, fst i == fst j, i /= j]
-        verticalCount :: Index -> [Index] -> Int
-        verticalCount i js = length [1 | j <- js, snd i == snd j, i /= j]
-        blockCount :: Index -> [Index] -> Int
-        blockCount i js = length [1 | j <- js, blockIndices i == blockIndices j, i /= j]
+        noDuplicates i js = any (==0) [checkCount (i,js) f | f <- [horizontalIndices, verticalIndices, blockIndices]]
+        checkCount :: (Index,[Index]) -> (Index -> [Index]) -> Int
+        checkCount (i,js) f = length [1 | j <- js, f i == f j, i /= j]
 
 candidates :: Board -> Int -> [(Index, Int)]
 candidates b n = zp n (removeDuplicates (candidateIndices b n))
