@@ -107,6 +107,17 @@ candidates b n = zp n (removeDuplicates (candidateIndices b n))
     where
         zp x ys = zip ys (replicate (length ys) x)
 
+solveStep :: Board -> Board
+solveStep b = updates b $ concat [candidates b i | i <- [1..9]]
+
+solve :: Board -> Board
+solve b
+    | isFinished b = b
+    | s == b = b
+    | otherwise = solve s
+    where
+        s = solveStep b
+
 gameMain :: Board -> IO ()
 gameMain b = do
     putStrLn $ (showBoard b) ++ "\n"
