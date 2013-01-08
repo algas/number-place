@@ -1,24 +1,26 @@
 module NumberPlace where
 
+import Data.Char
 import Data.List
 import Data.Array
 import Control.Applicative
+import System.Environment (getArgs)
 
 type Index = (Int,Int)
 type Board = Array Index Int
 
-example :: [[Int]]
-example = 
-    [[5,3,0 ,0,7,0 ,0,0,0]
-    ,[6,0,0 ,1,9,5 ,0,0,0]
-    ,[0,9,8 ,0,0,0 ,0,6,0]
-    ,[8,0,0 ,0,6,0 ,0,0,3]
-    ,[4,0,0 ,8,0,3 ,0,0,1]
-    ,[7,0,0 ,0,2,0 ,0,0,6]
-    ,[0,6,0 ,0,0,0 ,2,8,0]
-    ,[0,0,0 ,4,1,9 ,0,0,5]
-    ,[0,0,0 ,0,8,0 ,0,7,9]
-    ]
+-- example :: [[Int]]
+-- example = 
+    -- [[5,3,0 ,0,7,0 ,0,0,0]
+    -- ,[6,0,0 ,1,9,5 ,0,0,0]
+    -- ,[0,9,8 ,0,0,0 ,0,6,0]
+    -- ,[8,0,0 ,0,6,0 ,0,0,3]
+    -- ,[4,0,0 ,8,0,3 ,0,0,1]
+    -- ,[7,0,0 ,0,2,0 ,0,0,6]
+    -- ,[0,6,0 ,0,0,0 ,2,8,0]
+    -- ,[0,0,0 ,4,1,9 ,0,0,5]
+    -- ,[0,0,0 ,0,8,0 ,0,7,9]
+    -- ]
 
 boardBounds :: (Index,Index)
 boardBounds = ((1,1),(9,9))
@@ -26,8 +28,8 @@ boardBounds = ((1,1),(9,9))
 createBoard :: [[Int]] -> Board
 createBoard = listArray boardBounds . concat
 
-board :: Board
-board = createBoard example
+-- board :: Board
+-- board = createBoard example
 
 showBoard :: Board -> String
 showBoard b = intercalate "\n" [intersperse ',' (concat [show y | y <- ys]) | ys <- horizontalElems b]
@@ -126,6 +128,25 @@ gameMain b = do
         else do
             gameMain $ updates b $ concat [candidates b i | i <- [1..9]]
 
+split :: Eq a => a -> [a] -> [[a]]
+split _ [] = []
+split c xs = f : split c (dropWhile (==c) s)
+    where
+        (f,s) = break (==c) xs
+
+readBoard :: String -> Board
+readBoard str = createBoard [[readInt s | s <- split ',' line] | line <- lines str]
+    where
+        readInt :: String -> Int
+        readInt st = read st
+
 main :: IO ()
 main = do
-    gameMain board
+    args <- getArgs
+    let fileName = head args
+    fin <- readFile fileName
+    let b = readBoard fin
+    putStrLn $ head args
+    putStrLn $ showBoard b
+    putStrLn "result"
+    putStrLn $ showBoard $ solve b
